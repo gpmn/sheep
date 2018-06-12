@@ -68,7 +68,7 @@ type OrdersReturn struct {
 
 type MarketDepthData struct {
 	Type string    `json:"type"`
-	TS   string    `json:"ts"`
+	TS   int64     `json:"ts"`
 	Seq  string    `json:"seq"`
 	Bids []float64 `json:"bids"`
 	Asks []float64 `json:"asks"`
