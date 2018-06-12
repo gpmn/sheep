@@ -4,7 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
-	"net/url"
+	"github.com/leek-box/sheep/util"
 	"sort"
 )
 
@@ -17,8 +17,8 @@ import (
 func createSign(mapParams map[string]string, strMethod, strHostUrl, strRequestPath, strSecretKey string) string {
 	// 参数处理, 按API要求, 参数名应按ASCII码进行排序(使用UTF-8编码, 其进行URI编码, 16进制字符必须大写)
 	sortedParams := MapSortByKey(mapParams)
-	encodeParams := mapValueEncodeURI(sortedParams)
-	strParams := map2UrlQuery(encodeParams)
+	encodeParams := util.MapValueEncodeURI(sortedParams)
+	strParams := util.Map2UrlQuery(encodeParams)
 
 	strPayload := strMethod + "\n" + strHostUrl + "\n" + strRequestPath + "\n" + strParams
 

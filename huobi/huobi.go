@@ -182,7 +182,7 @@ func (h *Huobi) GetOrderInfo(params *proto.OrderInfoParams) (*proto.Order, error
 
 	var ret proto.Order
 	ret.Price, _ = strconv.ParseFloat(orderReturn.Data.Price, 64)
-	ret.ID = orderReturn.Data.ID
+	ret.ID = strconv.FormatInt(orderReturn.Data.ID, 10)
 	ret.Symbol = orderReturn.Data.Symbol
 	ret.State = orderReturn.Data.State
 	ret.FieldAmount, _ = strconv.ParseFloat(orderReturn.Data.FieldAmount, 64)
@@ -212,7 +212,7 @@ func (h *Huobi) GetOrders(params *proto.OrdersParams) ([]proto.Order, error) {
 	for _, cell := range ordersReturn.Data {
 		var item proto.Order
 		item.Price, _ = strconv.ParseFloat(cell.Price, 64)
-		item.ID = cell.ID
+		item.ID = strconv.FormatInt(cell.ID, 10)
 		item.Symbol = cell.Symbol
 		item.State = cell.State
 		item.FieldAmount, _ = strconv.ParseFloat(cell.FieldAmount, 64)

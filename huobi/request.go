@@ -24,7 +24,7 @@ func apiKeyGet(mapParams map[string]string, strRequestPath string, accessKey, se
 	mapParams["Signature"] = createSign(mapParams, strMethod, hostName, strRequestPath, secretKey)
 
 	strUrl := host + strRequestPath
-	return util.HttpGetRequest(strUrl, mapValueEncodeURI(mapParams))
+	return util.HttpGetRequest(strUrl, util.MapValueEncodeURI(mapParams))
 }
 
 // 进行签名后的HTTP POST请求, 参考官方Python Demo写的
@@ -44,7 +44,7 @@ func apiKeyPost(mapParams map[string]string, strRequestPath string, accessKey, s
 	hostName := "api.huobi.pro"
 
 	mapParams2Sign["Signature"] = createSign(mapParams2Sign, strMethod, hostName, strRequestPath, secretKey)
-	strUrl := host + strRequestPath + "?" + util.Map2UrlQuery(mapValueEncodeURI(mapParams2Sign))
+	strUrl := host + strRequestPath + "?" + util.Map2UrlQuery(util.MapValueEncodeURI(mapParams2Sign))
 
-	return util.HttpPostRequest(strUrl, mapParams)
+	return util.HttpPostRequest(strUrl, mapParams, nil)
 }

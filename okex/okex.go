@@ -134,7 +134,7 @@ func (o *OKEX) GetOrderInfo(params *proto.OrderInfoParams) (*proto.Order, error)
 	okOrder := okRet.Orders[0]
 
 	var ret proto.Order
-	ret.ID = okOrder.OrderID
+	ret.ID = strconv.FormatInt(okOrder.OrderID, 10)
 	ret.Symbol = strings.Replace(okOrder.Symbol, "_", "", 1)
 	ret.State = TransOrderStateFromStatus(okOrder.Status)
 	ret.Amount = okOrder.Amount
@@ -168,7 +168,7 @@ func (o *OKEX) GetOrders(params *proto.OrdersParams) ([]proto.Order, error) {
 	var ret []proto.Order
 	for _, okOrder := range okRet.Orders {
 		var item proto.Order
-		item.ID = okOrder.OrderID
+		item.ID = strconv.FormatInt(okOrder.OrderID, 10)
 		item.Symbol = strings.Replace(okOrder.Symbol, "_", "", 1)
 		item.State = TransOrderStateFromStatus(okOrder.Status)
 		item.Amount = okOrder.Amount
