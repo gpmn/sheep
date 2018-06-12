@@ -9,7 +9,7 @@ func TransOrderTypeFromProto(t string) (string, string) {
 	case proto.OrderPlaceTypeSellLimit:
 		return OrderTypeLimit, OrderSideSell
 	default:
-		return "类型错误", "类型错误"
+		return "类型错误", t
 
 	}
 }
@@ -23,7 +23,7 @@ func TransOrderTypeToProto(t, s string) string {
 		}
 	}
 
-	return "类型错误"
+	return "类型错误" + t + s
 }
 
 func TransOrderStateFromStatus(s string) string {
@@ -37,7 +37,7 @@ func TransOrderStateFromStatus(s string) string {
 	case OrderStateSubmitted:
 		return proto.OrderStateSubmitted
 	default:
-		return "类型错误"
+		return "类型错误" + s
 
 	}
 }
