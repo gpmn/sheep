@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/leek-box/sheep/proto"
 	"github.com/pkg/errors"
-	"log"
 	"strconv"
 	"strings"
 )
@@ -33,7 +32,6 @@ func (f *FCoin) GetAccountBalance() ([]proto.AccountBalance, error) {
 	balanceReturn := BalanceReturn{}
 	strRequest := "accounts/balance"
 	jsonBanlanceReturn := apiKeyGet(make(map[string]string), strRequest, f.accessKey, f.secretKey)
-	log.Println(jsonBanlanceReturn)
 	json.Unmarshal([]byte(jsonBanlanceReturn), &balanceReturn)
 	if balanceReturn.Status != 0 {
 		return nil, errors.New(strconv.Itoa(balanceReturn.Status))
@@ -81,7 +79,6 @@ func (f *FCoin) OrderPlace(params *proto.OrderPlaceParams) (*proto.OrderPlaceRet
 
 	strRequest := "orders"
 	jsonPlaceReturn := apiKeyPost(mapParams, strRequest, f.accessKey, f.secretKey)
-	log.Println(jsonPlaceReturn)
 	json.Unmarshal([]byte(jsonPlaceReturn), &placeReturn)
 
 	if placeReturn.Status != 0 {
@@ -116,7 +113,6 @@ func (f *FCoin) GetOrderInfo(params *proto.OrderInfoParams) (*proto.Order, error
 
 	strRequest := fmt.Sprintf("orders/%s", params.OrderID)
 	jsonPlaceReturn := apiKeyGet(make(map[string]string), strRequest, f.accessKey, f.secretKey)
-	log.Println(jsonPlaceReturn)
 	json.Unmarshal([]byte(jsonPlaceReturn), &orderReturn)
 
 	var ret proto.Order
@@ -143,7 +139,6 @@ func (f *FCoin) GetOrders(params *proto.OrdersParams) ([]proto.Order, error) {
 
 	strRequest := "orders"
 	jsonRet := apiKeyGet(paramMap, strRequest, f.accessKey, f.secretKey)
-	log.Println(jsonRet)
 	json.Unmarshal([]byte(jsonRet), &ordersReturn)
 
 	var ret []proto.Order
@@ -169,7 +164,6 @@ func GetMarketDepth(params *proto.MarketDepthParams) (*MarketDepthReturn, error)
 
 	strRequest := "market/depth/" + params.Level + "/" + params.Symbol
 	jsonRet := apiKeyGet(make(map[string]string), strRequest, "", "")
-	log.Println(jsonRet)
 
 	json.Unmarshal([]byte(jsonRet), &marketDepth)
 

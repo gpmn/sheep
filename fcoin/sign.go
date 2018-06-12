@@ -3,7 +3,6 @@ package fcoin
 import (
 	"encoding/base64"
 	"github.com/leek-box/sheep/util"
-	"log"
 	"strconv"
 )
 
@@ -24,8 +23,6 @@ func CreateSign(strMethod, strRequestPath, secretKey string, urlParams, postPara
 	// strconv.FormatInt(time.Now().Unix(), 10)
 
 	strPayload := strMethod + FCoinHost + strRequestPath + strconv.FormatInt(unix, 10)
-
-	log.Println(strPayload)
 
 	if len(sortedPostParams) != 0 {
 		strPayload = strPayload + util.Map2UrlQuery(sortedPostParams)
