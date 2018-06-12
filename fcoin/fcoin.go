@@ -154,7 +154,7 @@ func (f *FCoin) GetOrders(params *proto.OrdersParams) ([]proto.Order, error) {
 		item.Symbol = cell.Symbol
 		item.State = cell.State
 		item.FieldAmount, _ = strconv.ParseFloat(cell.FilledAmount, 64)
-		item.Type = cell.Type
+		item.Type = TransOrderTypeToProto(cell.Type, cell.Side)
 		item.Amount, _ = strconv.ParseFloat(cell.Amount, 64)
 
 		ret = append(ret, item)
