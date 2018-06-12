@@ -164,11 +164,11 @@ func (f *FCoin) GetOrders(params *proto.OrdersParams) ([]proto.Order, error) {
 
 }
 
-func (f *FCoin) GetMarketDepth(params *proto.MarketDepthParams) (*MarketDepthReturn, error) {
+func GetMarketDepth(params *proto.MarketDepthParams) (*MarketDepthReturn, error) {
 	marketDepth := MarketDepthReturn{}
 
 	strRequest := "market/depth/" + params.Level + "/" + params.Symbol
-	jsonRet := apiKeyGet(make(map[string]string), strRequest, f.accessKey, f.secretKey)
+	jsonRet := apiKeyGet(make(map[string]string), strRequest, "", "")
 	log.Println(jsonRet)
 
 	json.Unmarshal([]byte(jsonRet), &marketDepth)
