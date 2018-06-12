@@ -50,7 +50,7 @@ const (
 )
 
 type Order struct {
-	ID          int64   `json:"id"`
+	ID          string  `json:"id"`
 	Symbol      string  `json:"symbol"`
 	State       string  `json:"state"`
 	Amount      float64 `json:"amount"`
@@ -67,4 +67,9 @@ type OrdersParams struct {
 	Status          string `json:"status"`            //OKEX 查询状态 0：未完成的订单 1：已经完成的订单 （最近两天的数据）
 	CurrentPage     string `json:"current_page"`      //OKEX 当前页数
 	PageLength      string `json:"page_length"`       //OKEX 每页数据条数，最多不超过200
+}
+
+type MarketDepthParams struct {
+	Symbol string `json:"symbol"`
+	Level  string `json:"level"`
 }

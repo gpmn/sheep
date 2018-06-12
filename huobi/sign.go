@@ -25,40 +25,6 @@ func createSign(mapParams map[string]string, strMethod, strHostUrl, strRequestPa
 	return computeHmac256(strPayload, strSecretKey)
 }
 
-// 对Map的值进行URI编码
-// mapParams: 需要进行URI编码的map
-// return: 编码后的map
-func mapValueEncodeURI(mapValue map[string]string) map[string]string {
-	for key, value := range mapValue {
-		valueEncodeURI := url.QueryEscape(value)
-		mapValue[key] = valueEncodeURI
-	}
-
-	return mapValue
-}
-
-// 将map格式的请求参数转换为字符串格式的
-// mapParams: map格式的参数键值对
-// return: 查询字符串
-func map2UrlQuery(mapParams map[string]string) string {
-	var keys []string
-	for key := range mapParams {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-
-	var strParams string
-	for _, key := range keys {
-		strParams += (key + "=" + mapParams[key] + "&")
-	}
-
-	if 0 < len(strParams) {
-		strParams = string([]rune(strParams)[:len(strParams)-1])
-	}
-
-	return strParams
-}
-
 // HMAC SHA256加密
 // strMessage: 需要加密的信息
 // strSecret: 密钥

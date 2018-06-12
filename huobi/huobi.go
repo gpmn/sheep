@@ -226,6 +226,34 @@ func (h *Huobi) GetOrders(params *proto.OrdersParams) ([]proto.Order, error) {
 
 }
 
+// 查询订单详情
+// strOrderID: 订单ID
+// return: OrderReturn对象
+func (h *Huobi) GetPointOrders() (*proto.Order, error) {
+	//orderReturn := OrderReturn{}
+
+	strRequest := fmt.Sprintf("/v1/points/orders")
+	jsonPlaceReturn := apiKeyGet(make(map[string]string), strRequest, h.accessKey, h.secretKey)
+	log.Println(jsonPlaceReturn)
+	//json.Unmarshal([]byte(jsonPlaceReturn), &orderReturn)
+	//
+	//if orderReturn.Status != "ok" {
+	//	return nil, errors.New(orderReturn.ErrMsg)
+	//}
+	//
+	//var ret proto.Order
+	//ret.Price, _ = strconv.ParseFloat(orderReturn.Data.Price, 64)
+	//ret.ID = orderReturn.Data.ID
+	//ret.Symbol = orderReturn.Data.Symbol
+	//ret.State = orderReturn.Data.State
+	//ret.FieldAmount, _ = strconv.ParseFloat(orderReturn.Data.FieldAmount, 64)
+	//ret.Type = orderReturn.Data.Type
+	//ret.Amount, _ = strconv.ParseFloat(orderReturn.Data.Amount, 64)
+
+	return nil, nil
+
+}
+
 func (h *Huobi) SetDetailListener(listener DetailListener) {
 	h.detailListener = listener
 }
