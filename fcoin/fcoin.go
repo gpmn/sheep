@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/leek-box/sheep/proto"
 	"github.com/pkg/errors"
+	"log"
 	"strconv"
 	"strings"
 )
@@ -79,6 +80,7 @@ func (f *FCoin) OrderPlace(params *proto.OrderPlaceParams) (*proto.OrderPlaceRet
 
 	strRequest := "orders"
 	jsonPlaceReturn := apiKeyPost(mapParams, strRequest, f.accessKey, f.secretKey)
+	log.Println(jsonPlaceReturn)
 	json.Unmarshal([]byte(jsonPlaceReturn), &placeReturn)
 
 	if placeReturn.Status != 0 {
