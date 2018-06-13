@@ -124,6 +124,7 @@ func (f *FCoin) GetOrderInfo(params *proto.OrderInfoParams) (*proto.Order, error
 	ret.State = TransOrderStateFromStatus(orderReturn.Data.State)
 	ret.Type = TransOrderTypeToProto(orderReturn.Data.Type, orderReturn.Data.Side)
 	ret.Amount, _ = strconv.ParseFloat(orderReturn.Data.Amount, 64)
+	ret.FieldAmount, _ = strconv.ParseFloat(orderReturn.Data.FilledAmount, 64)
 
 	return &ret, nil
 
