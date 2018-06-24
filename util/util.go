@@ -76,6 +76,14 @@ func ComputeHmacSha1(strMessage string, strSecret string) string {
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }
 
+func ComputeHmacMd5(strMessage, strSecret string) string {
+	key := []byte(strSecret)
+	h := hmac.New(md5.New, key)
+	h.Write([]byte(strMessage))
+
+	return hex.EncodeToString(h.Sum(nil))
+}
+
 // Http Get请求基础函数, 通过封装Go语言Http请求, 支持火币网REST API的HTTP Get请求
 // strUrl: 请求的URL
 // strParams: string类型的请求参数, user=lxz&pwd=lxz
