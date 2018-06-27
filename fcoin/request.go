@@ -1,9 +1,10 @@
 package fcoin
 
 import (
-	"github.com/leek-box/sheep/util"
 	"strconv"
 	"time"
+
+	"github.com/leek-box/sheep/util"
 )
 
 // 进行签名后的HTTP GET请求, 参考官方Python Demo写的
