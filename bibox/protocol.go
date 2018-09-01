@@ -74,8 +74,8 @@ type OrderPendingListRspResultItem struct {
 	AccountType    int    `json:"account_type"`
 	CoinSymbol     string `json:"coin_symbol"`
 	CurrencySymbol string `json:"currency_symbol"`
-	OrderSide      string `json:"order_side"`
-	OrderType      string `json:"order_type"`
+	OrderSide      int    `json:"order_side"`
+	OrderType      int    `json:"order_type"`
 	Price          string `json:"price"`
 	Amount         string `json:"amount"`
 	Money          string `json:"money"`
@@ -87,14 +87,16 @@ type OrderPendingListRspResultItem struct {
 }
 
 type OrderPendingListRspResult struct {
-	Count int                             `json:"count"`
-	Page  int                             `json:"page"`
-	Items []OrderPendingListRspResultItem `json:"items"`
+	Result struct {
+		Count int                             `json:"count"`
+		Page  int                             `json:"page"`
+		Items []OrderPendingListRspResultItem `json:"items"`
+	} `json:"result"`
+	Cmd string `json:"cmd"`
 }
 
 type OrderPendingListRsp struct {
 	Result []OrderPendingListRspResult `json:"result"`
-	Cmd    string                      `json:"cmd"`
 }
 
 type OrderInfoRspResult struct {
@@ -104,8 +106,8 @@ type OrderInfoRspResult struct {
 	Pair           string `json:"pair"`
 	CoinSymbol     string `json:"coin_symbol"`
 	CurrencySymbol string `json:"currency_symbol"`
-	OrderSide      string `json:"order_side"`
-	OrderType      string `json:"order_type"`
+	OrderSide      int    `json:"order_side"`
+	OrderType      int    `json:"order_type"`
 	Price          string `json:"price"`
 	Amount         string `json:"amount"`
 	Money          string `json:"money"`
@@ -114,28 +116,37 @@ type OrderInfoRspResult struct {
 	DealMoney      string `json:"deal_money"`
 	DealPercent    string `json:"deal_percent"`
 	Status         int    `json:"status"`
+	Cmd            string `json:"cmd"`
 }
 
 type OrderInfoRsp struct {
-	Result OrderInfoRspResult `json:"result"`
-	Cmd    string             `json:"cmd"`
+	Result []struct {
+		Result OrderInfoRspResult `json:"result"`
+		Cmd    string             `json:"cmd"`
+	} `json:"result"`
 }
 
 type GetOrderHistoryListRspResult struct {
-	ID             int64  `json:"id"`
+	ID             uint   `json:"id"`
 	CreatedAt      int64  `json:"createdAt"`
 	AccountType    int    `json:"account_type"`
 	CoinSymbol     string `json:"coin_symbol"`
 	CurrencySymbol string `json:"currency_symbol"`
-	OrderSide      string `json:"order_side"`
-	OrderType      string `json:"order_type"`
+	OrderSide      int    `json:"order_side"`
+	OrderType      int    `json:"order_type"`
 	Price          string `json:"price"`
 	Amount         string `json:"amount"`
 	Money          string `json:"money"`
-	Fee            int    `json:"fee"`
+	Fee            string `json:"fee"`
 }
 
 type GetOrderHistoryListRsp struct {
-	Result GetOrderHistoryListRspResult `json:"result"`
-	Cmd    string                       `json:"cmd"`
+	Result []struct {
+		Result struct {
+			Count int                            `json:"count"`
+			Page  int                            `json:"page"`
+			Items []GetOrderHistoryListRspResult `json:"items"`
+		} `json:"result"`
+		Cmd string `json:"cmd"`
+	} `json:"result"`
 }
