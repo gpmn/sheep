@@ -8,9 +8,10 @@ import (
 	"strings"
 
 	"fmt"
+
+	"github.com/bitly/go-simplejson"
 	"github.com/leek-box/sheep/consts"
 	"github.com/leek-box/sheep/proto"
-	"github.com/leizongmin/huobiapi"
 )
 
 type MarketTradeDetail struct {
@@ -263,11 +264,11 @@ func (h *Huobi) SetDepthlListener(listener DepthlListener) {
 }
 
 // Listener 订阅事件监听器
-type DetailListener = func(symbol string, detail *MarketTradeDetail)
+type DetailListener func(symbol string, detail *MarketTradeDetail)
 
 func (h *Huobi) SubscribeDetail(symbols ...string) {
 	for _, symbol := range symbols {
-		h.market.Subscribe("market."+symbol+".trade.detail", func(topic string, j *huobiapi.JSON) {
+		h.market.Subscribe("market."+symbol+".trade.detail", func(topic string, j *simplejson.Json) {
 			js, _ := j.MarshalJSON()
 			var mtd MarketTradeDetail
 			err := json.Unmarshal(js, &mtd)
@@ -286,11 +287,11 @@ func (h *Huobi) SubscribeDetail(symbols ...string) {
 }
 
 // Listener 订阅事件监听器
-type DepthlListener = func(symbol string, depth *MarketDepth)
+type DepthlListener func(symbol string, depth *MarketDepth)
 
 func (h *Huobi) SubscribeDepth(symbols ...string) {
 	for _, symbol := range symbols {
-		h.market.Subscribe("market."+symbol+".depth.step0", func(topic string, j *huobiapi.JSON) {
+		h.market.Subscribe("market."+symbol+".depth.step0", func(topic string, j *simplejson.Json) {
 			js, _ := j.MarshalJSON()
 			var md = MarketDepth{}
 			err := json.Unmarshal(js, &md)
