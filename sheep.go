@@ -1,10 +1,10 @@
 package sheep
 
 import (
-	"github.com/leek-box/sheep/consts"
-	"github.com/leek-box/sheep/huobi"
-	"github.com/leek-box/sheep/okex"
-	"github.com/leek-box/sheep/proto"
+	"github.com/gpmn/sheep/consts"
+	"github.com/gpmn/sheep/huobi"
+	"github.com/gpmn/sheep/okex"
+	"github.com/gpmn/sheep/proto"
 	"github.com/pkg/errors"
 )
 
