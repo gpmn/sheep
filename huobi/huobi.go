@@ -100,15 +100,16 @@ type RespGetKLines struct {
 }
 
 // 查询当前用户的K线数据
-func (h *Huobi) GetKLines(symbol, period string, size int) (klines []RespGetKLines, err error) {
+func (h *Huobi) GetKLines(symbol, period string, size int) (kl RespGetKLines, err error) {
 	strRequest := "/market/history/kline"
 	param := make(map[string]string)
 	param["symbol"] = symbol
 	param["period"] = period
 	param["size"] = strconv.Itoa(size)
 	jsonReturn := apiKeyGet(param, strRequest, h.accessKey, h.secretKey)
-	err = json.Unmarshal([]byte(jsonReturn), &klines)
-	return klines, err
+	err = json.Unmarshal([]byte(jsonReturn), &kl)
+	log.Printf("jsonReturn -> %s", jsonReturn)
+	return kl, err
 }
 
 // 查询当前用户的所有账户, 根据包含的私钥查询
