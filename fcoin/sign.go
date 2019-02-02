@@ -2,8 +2,9 @@ package fcoin
 
 import (
 	"encoding/base64"
-	"github.com/leek-box/sheep/util"
 	"strconv"
+
+	"github.com/gpmn/sheep/util"
 )
 
 // 构造签名

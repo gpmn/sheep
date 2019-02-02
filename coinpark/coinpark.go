@@ -5,7 +5,7 @@ import (
 
 	"log"
 
-	"github.com/leek-box/sheep/util"
+	"github.com/gpmn/sheep/util"
 )
 
 const CoinParkHost = "https://api.coinpark.cc"

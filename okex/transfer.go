@@ -1,6 +1,6 @@
 package okex
 
-import "github.com/leek-box/sheep/proto"
+import "github.com/gpmn/sheep/proto"
 
 func TransOrderType(t string) string {
 	switch t {

@@ -1,6 +1,6 @@
 package fcoin
 
-import "github.com/leek-box/sheep/proto"
+import "github.com/gpmn/sheep/proto"
 
 func TransOrderTypeFromProto(t string) (string, string) {
 	switch t {

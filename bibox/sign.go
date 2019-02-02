@@ -1,7 +1,7 @@
 package bibox
 
 import (
-	"github.com/leek-box/sheep/util"
+	"github.com/gpmn/sheep/util"
 )
 
 func CreateSign(secret string, cmds string) string {

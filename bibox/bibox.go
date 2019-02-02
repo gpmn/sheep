@@ -6,7 +6,7 @@ import (
 
 	"encoding/json"
 
-	"github.com/leek-box/sheep/util"
+	"github.com/gpmn/sheep/util"
 )
 
 const BiboxHost = "https://api.bibox.com"

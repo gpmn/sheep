@@ -3,11 +3,12 @@ package fcoin
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/leek-box/sheep/proto"
-	"github.com/pkg/errors"
 	"log"
 	"strconv"
 	"strings"
+
+	"github.com/gpmn/sheep/proto"
+	"github.com/pkg/errors"
 )
 
 const FCoinHost = "https://api.fcoin.com/v2/"

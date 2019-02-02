@@ -9,8 +9,8 @@ import (
 
 	"log"
 
-	"github.com/leek-box/sheep/consts"
-	"github.com/leek-box/sheep/proto"
+	"github.com/gpmn/sheep/consts"
+	"github.com/gpmn/sheep/proto"
 	"github.com/leizongmin/huobiapi"
 	"github.com/pkg/errors"
 )

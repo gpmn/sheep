@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/leek-box/sheep/util"
+	"github.com/gpmn/sheep/util"
 )
 
 // 进行签名后的HTTP GET请求, 参考官方Python Demo写的

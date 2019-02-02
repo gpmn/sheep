@@ -3,12 +3,13 @@ package fcoin
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/bitly/go-simplejson"
-	"github.com/leek-box/sheep/util"
 	"log"
 	"math"
 	"sync"
 	"time"
+
+	"github.com/bitly/go-simplejson"
+	"github.com/gpmn/sheep/util"
 )
 
 type jsonChan = chan *simplejson.Json
