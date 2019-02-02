@@ -4,8 +4,9 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
-	"github.com/leek-box/sheep/util"
 	"sort"
+
+	"github.com/gpmn/sheep/util"
 )
 
 // 构造签名

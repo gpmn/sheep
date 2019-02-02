@@ -10,8 +10,8 @@ import (
 	"fmt"
 
 	"github.com/bitly/go-simplejson"
-	"github.com/leek-box/sheep/consts"
-	"github.com/leek-box/sheep/proto"
+	"github.com/gpmn/sheep/consts"
+	"github.com/gpmn/sheep/proto"
 )
 
 type MarketTradeDetail struct {
@@ -47,12 +47,13 @@ type Account struct {
 }
 
 type Huobi struct {
-	accessKey      string
-	secretKey      string
-	tradeAccount   Account
-	market         *Market
-	depthListener  DepthlListener
-	detailListener DetailListener
+	accessKey       string
+	secretKey       string
+	tradeAccount    Account
+	market          *Market
+	depthListener   DepthlListener
+	detailListener  DetailListener
+	klineUpListener KLineUpListener
 }
 
 func (h *Huobi) OpenWebsocket() error {
@@ -74,6 +75,42 @@ func (h *Huobi) GetExchangeType() string {
 	return consts.ExchangeTypeHuobi
 }
 
+type KLine struct {
+	ID     int     `json:"id"`
+	Open   float64 `json:"open"`
+	Close  float64 `json:"close"`
+	Low    float64 `json:"low"`
+	High   float64 `json:"high"`
+	Amount float64 `json:"amount"`
+	Vol    float64 `json:"vol"`
+	Count  int     `json:"count"`
+}
+
+type KLineUpdate struct {
+	Ch    string `json:"ch"`
+	Ts    int64  `json:"ts"`
+	KLine KLine  `json:"tick"`
+}
+
+type RespGetKLines struct {
+	Status string  `json:"status"`
+	Ch     string  `json:"ch"`
+	Ts     int64   `json:"ts"`
+	KLines []KLine `json:"data"`
+}
+
+// 查询当前用户的K线数据
+func (h *Huobi) GetKLines(symbol, period string, size int) (klines []RespGetKLines, err error) {
+	strRequest := "/market/history/kline"
+	param := make(map[string]string)
+	param["symbol"] = symbol
+	param["period"] = period
+	param["size"] = strconv.Itoa(size)
+	jsonReturn := apiKeyGet(param, strRequest, h.accessKey, h.secretKey)
+	err = json.Unmarshal([]byte(jsonReturn), &klines)
+	return klines, err
+}
+
 // 查询当前用户的所有账户, 根据包含的私钥查询
 // return: AccountsReturn对象
 func (h *Huobi) GetAccounts() AccountsReturn {
@@ -82,7 +119,7 @@ func (h *Huobi) GetAccounts() AccountsReturn {
 	strRequest := "/v1/account/accounts"
 	jsonAccountsReturn := apiKeyGet(make(map[string]string), strRequest, h.accessKey, h.secretKey)
 	json.Unmarshal([]byte(jsonAccountsReturn), &accountsReturn)
-
+	log.Printf(jsonAccountsReturn)
 	return accountsReturn
 }
 
@@ -263,6 +300,10 @@ func (h *Huobi) SetDepthlListener(listener DepthlListener) {
 	h.depthListener = listener
 }
 
+func (h *Huobi) SetKLineUpListener(listener KLineUpListener) {
+	h.klineUpListener = listener
+}
+
 // Listener 订阅事件监听器
 type DetailListener func(symbol string, detail *MarketTradeDetail)
 
@@ -306,6 +347,28 @@ func (h *Huobi) SubscribeDepth(symbols ...string) {
 
 		})
 	}
+}
+
+type KLineUpListener func(symbol string, kline *KLineUpdate)
+
+func (h *Huobi) SubscribeKLine(period string, symbols ...string) {
+	for _, symbol := range symbols {
+		h.market.Subscribe("market."+symbol+".kline."+period, func(topic string, j *simplejson.Json) {
+			js, _ := j.MarshalJSON()
+			var mku KLineUpdate
+			err := json.Unmarshal(js, &mku)
+			if err != nil {
+				log.Println(err.Error())
+			}
+
+			ts := strings.Split(topic, ".")
+			if h.klineUpListener != nil {
+				h.klineUpListener(ts[1], &mku)
+			}
+
+		})
+	}
+
 }
 
 func NewHuobi(accesskey, secretkey string) (*Huobi, error) {

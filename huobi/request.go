@@ -1,8 +1,10 @@
 package huobi
 
 import (
-	"github.com/leek-box/sheep/util"
+	"log"
 	"time"
+
+	"github.com/gpmn/sheep/util"
 )
 
 const host = "https://api.huobi.pro"
@@ -24,6 +26,7 @@ func apiKeyGet(mapParams map[string]string, strRequestPath string, accessKey, se
 	mapParams["Signature"] = createSign(mapParams, strMethod, hostName, strRequestPath, secretKey)
 
 	strUrl := host + strRequestPath
+	log.Printf("strURL is : %s", strUrl)
 	return util.HttpGetRequest(strUrl, util.MapValueEncodeURI(mapParams))
 }
 

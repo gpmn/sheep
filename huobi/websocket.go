@@ -5,15 +5,17 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"github.com/leek-box/sheep/util"
 	"io/ioutil"
 	"math/rand"
 	"time"
 
+	"github.com/gpmn/sheep/util"
+
 	"math"
 
-	"github.com/bitly/go-simplejson"
 	"sync"
+
+	"github.com/bitly/go-simplejson"
 )
 
 // Endpoint 行情的Websocket入口
