@@ -89,7 +89,7 @@ type KLine struct {
 type KLineUpdate struct {
 	Ch    string `json:"ch"`
 	Ts    int64  `json:"ts"`
-	KLine KLine  `json:"tick"`
+	Kline KLine  `json:"tick"`
 }
 
 type RespGetKLines struct {
@@ -108,7 +108,6 @@ func (h *Huobi) GetKLines(symbol, period string, size int) (kl RespGetKLines, er
 	param["size"] = strconv.Itoa(size)
 	jsonReturn := apiKeyGet(param, strRequest, h.accessKey, h.secretKey)
 	err = json.Unmarshal([]byte(jsonReturn), &kl)
-	log.Printf("jsonReturn -> %s", jsonReturn)
 	return kl, err
 }
 
@@ -120,7 +119,6 @@ func (h *Huobi) GetAccounts() AccountsReturn {
 	strRequest := "/v1/account/accounts"
 	jsonAccountsReturn := apiKeyGet(make(map[string]string), strRequest, h.accessKey, h.secretKey)
 	json.Unmarshal([]byte(jsonAccountsReturn), &accountsReturn)
-	log.Printf(jsonAccountsReturn)
 	return accountsReturn
 }
 
@@ -315,7 +313,8 @@ func (h *Huobi) SubscribeDetail(symbols ...string) {
 			var mtd MarketTradeDetail
 			err := json.Unmarshal(js, &mtd)
 			if err != nil {
-				log.Println(err.Error())
+				log.Printf("Huobi.SubscribeDetail - callback failed : %s", err.Error())
+				return
 			}
 
 			ts := strings.Split(topic, ".")
@@ -338,20 +337,22 @@ func (h *Huobi) SubscribeDepth(symbols ...string) {
 			var md = MarketDepth{}
 			err := json.Unmarshal(js, &md)
 			if err != nil {
-				log.Println(err.Error())
+				log.Printf("Huobi.SubscribeDepth - callback failed : %s", err.Error())
+				return
 			}
 
 			ts := strings.Split(topic, ".")
 			if h.depthListener != nil {
 				h.depthListener(ts[1], &md)
 			}
-
 		})
 	}
 }
 
+// KLineUpListener :
 type KLineUpListener func(symbol string, kline *KLineUpdate)
 
+// SubscribeKLine :
 func (h *Huobi) SubscribeKLine(period string, symbols ...string) {
 	for _, symbol := range symbols {
 		h.market.Subscribe("market."+symbol+".kline."+period, func(topic string, j *simplejson.Json) {
@@ -359,17 +360,17 @@ func (h *Huobi) SubscribeKLine(period string, symbols ...string) {
 			var mku KLineUpdate
 			err := json.Unmarshal(js, &mku)
 			if err != nil {
-				log.Println(err.Error())
+				log.Printf("Huobi.SubscribeKLine - callback failed : %s", err.Error())
+				return
 			}
 
 			ts := strings.Split(topic, ".")
 			if h.klineUpListener != nil {
 				h.klineUpListener(ts[1], &mku)
 			}
-
 		})
 	}
-
+	return
 }
 
 func NewHuobi(accesskey, secretkey string) (*Huobi, error) {
