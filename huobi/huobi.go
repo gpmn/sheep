@@ -14,15 +14,19 @@ import (
 	"github.com/gpmn/sheep/proto"
 )
 
+// TickData :
+type TickData struct {
+	Amount    float64 `json:"amount"`
+	Direction string  `json:"direction"`
+	Price     float64 `json:"price"`
+	TS        int64   `json:"ts"`
+}
+
+// MarketTradeDetail :
 type MarketTradeDetail struct {
 	Ch   string `json:"ch"`
 	Tick struct {
-		Data []struct {
-			Amount    float64 `json:"amount"`
-			Direction string  `json:"direction"`
-			Price     float64 `json:"price"`
-			TS        int64   `json:"ts"`
-		} `json:"data"`
+		Data []TickData `json:"data"`
 	} `json:"tick"`
 }
 
@@ -324,7 +328,6 @@ func (h *Huobi) SubscribeDetail(symbols ...string) {
 
 		})
 	}
-
 }
 
 // Listener 订阅事件监听器

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"time"
 
@@ -42,7 +43,7 @@ type reqData struct {
 	ID  string `json:"id"`
 }
 
-type jsonChan = chan *simplejson.Json
+type jsonChan chan *simplejson.Json
 
 var letterRunes = []rune("1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
@@ -97,7 +98,7 @@ type Market struct {
 }
 
 // Listener 订阅事件监听器
-type Listener = func(topic string, json *simplejson.Json)
+type Listener func(topic string, json *simplejson.Json)
 
 // NewMarket 创建Market实例
 func NewMarket() (m *Market, err error) {
@@ -122,14 +123,14 @@ func NewMarket() (m *Market, err error) {
 
 // connect 连接
 func (m *Market) connect() error {
-	fmt.Println("connecting")
+	log.Println("connecting")
 	ws, err := util.NewSafeWebSocket(Endpoint)
 	if err != nil {
 		return err
 	}
 	m.ws = ws
 	m.lastPing = getUinxMillisecond()
-	fmt.Println("connected")
+	log.Println("connected")
 
 	m.handleMessageLoop()
 	m.keepAlive()
@@ -139,11 +140,11 @@ func (m *Market) connect() error {
 
 // reconnect 重新连接
 func (m *Market) reconnect() error {
-	fmt.Println("reconnecting after 1s")
+	log.Println("reconnecting after 1s")
 	time.Sleep(time.Second)
 
 	if err := m.connect(); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return err
 	}
 
@@ -165,7 +166,7 @@ func (m *Market) sendMessage(data interface{}) error {
 	if err != nil {
 		return nil
 	}
-	fmt.Println("sendMessage", string(b))
+	//log.Println("sendMessage", string(b))
 	m.ws.Send(b)
 	return nil
 }
@@ -174,14 +175,14 @@ func (m *Market) sendMessage(data interface{}) error {
 func (m *Market) handleMessageLoop() {
 	m.ws.Listen(func(buf []byte) {
 		msg, err := unGzipData(buf)
-		//fmt.Println("readMessage", string(msg))
+		//log.Println("readMessage", string(msg))
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
 		json, err := simplejson.NewJson(msg)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
 
@@ -202,7 +203,7 @@ func (m *Market) handleMessageLoop() {
 			m.mutex.RLock()
 			listener, ok := m.listeners[ch]
 			if ok {
-				//fmt.Println("handleSubscribe", json)
+				//log.Println("handleSubscribe", json)
 				listener(ch, json)
 			}
 			m.mutex.RUnlock()
@@ -249,11 +250,11 @@ func (m *Market) keepAlive() {
 		// 检查上次ping时间，如果超过20秒无响应，重新连接
 		tr := time.Duration(math.Abs(float64(t - m.lastPing)))
 		if tr >= m.HeartbeatInterval*2 {
-			fmt.Println("no ping max delay", tr, m.HeartbeatInterval*2, t, m.lastPing)
+			log.Println("no ping max delay", tr, m.HeartbeatInterval*2, t, m.lastPing)
 			if m.autoReconnect {
 				err := m.reconnect()
 				if err != nil {
-					fmt.Println(err)
+					log.Println(err)
 				}
 			}
 		}
@@ -262,7 +263,7 @@ func (m *Market) keepAlive() {
 
 // handlePing 处理Ping
 func (m *Market) handlePing(ping pingData) (err error) {
-	fmt.Println("handlePing", ping)
+	//log.Println("handlePing", ping)
 	m.lastPing = ping.Ping
 	var pong = pongData{Pong: ping.Ping}
 	err = m.sendMessage(pong)
@@ -282,7 +283,7 @@ func (m *Market) Subscribe(topic string, listener Listener) error {
 		m.sendMessage(subData{ID: topic, Sub: topic})
 		isNew = true
 	} else {
-		fmt.Println("send subscribe before, reset listener only")
+		log.Println("send subscribe before, reset listener only")
 	}
 
 	m.mutex.Lock()
@@ -302,7 +303,7 @@ func (m *Market) Subscribe(topic string, listener Listener) error {
 
 // Unsubscribe 取消订阅
 func (m *Market) Unsubscribe(topic string) {
-	fmt.Println("unSubscribe", topic)
+	log.Println("unSubscribe", topic)
 	// 火币网没有提供取消订阅的接口，只能删除监听器
 	delete(m.listeners, topic)
 }
@@ -328,11 +329,11 @@ func (m *Market) Request(req string) (*simplejson.Json, error) {
 
 // Loop 进入循环
 func (m *Market) Loop() {
-	fmt.Println("startLoop")
+	log.Println("startLoop")
 	for {
 		err := m.ws.Loop()
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			if err == util.SafeWebSocketDestroyError {
 				break
 			} else if m.autoReconnect {
@@ -342,12 +343,12 @@ func (m *Market) Loop() {
 			}
 		}
 	}
-	fmt.Println("endLoop")
+	log.Println("endLoop")
 }
 
 // ReConnect 重新连接
 func (m *Market) ReConnect() (err error) {
-	fmt.Println("reconnect")
+	log.Println("reconnect")
 	m.autoReconnect = true
 	if err = m.ws.Destroy(); err != nil {
 		return err
@@ -357,7 +358,7 @@ func (m *Market) ReConnect() (err error) {
 
 // Close 关闭连接
 func (m *Market) Close() error {
-	fmt.Println("close")
+	log.Println("close")
 	m.autoReconnect = false
 	if err := m.ws.Destroy(); err != nil {
 		return err
