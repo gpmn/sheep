@@ -14,6 +14,70 @@ import (
 	"github.com/gpmn/sheep/proto"
 )
 
+// LoanOrder :
+type LoanOrder struct {
+	AccountID       int     `json:"account-id"`
+	AccruedAt       int     `json:"accrued-at"`
+	CreatedAt       int     `json:"created-at"`
+	Currency        string  `json:"currency"`
+	ID              int     `json:"id"`
+	InterestAmount  string  `json:"interest-amount"`
+	InterestBalance float64 `json:"interest-balance, string"`
+	InterestRate    string  `json:"interest-rate"`
+	LoanAmount      string  `json:"loan-amount"`
+	LoanBalance     float64 `json:"loan-balance, string"`
+	State           string  `json:"state"`
+	Symbol          string  `json:"symbol"`
+	UserID          int     `json:"user-id"`
+}
+
+// LoanOrderResp :
+type LoanOrderResp struct {
+	Orders []LoanOrder `json:"data"`
+	Status string      `json:"status"`
+}
+
+// MarginBalanceItem :
+type MarginBalanceItem struct {
+	Balance  float64 `json:"balance, string"`
+	Currency string  `json:"currency"`
+	Type     string  `json:"type"`
+}
+
+// FindMBItem :
+func (mb *MarginBalance) FindMBItem(currency, tp string) *MarginBalanceItem {
+	if mb.State != "working" {
+		log.Printf("MarginBalance.FindMBItem - mb.State %s invalid", mb.State)
+		return nil
+	}
+
+	for idx := range mb.List {
+		item := &mb.List[idx]
+		if item.Currency == currency && item.Type == tp {
+			return item
+		}
+	}
+	return nil
+}
+
+// MarginBalance :
+type MarginBalance struct {
+	FlPrice  string              `json:"fl-price"`
+	FlType   string              `json:"fl-type"`
+	ID       int                 `json:"id"`
+	List     []MarginBalanceItem `json:"list"`
+	RiskRate string              `json:"risk-rate"`
+	State    string              `json:"state"`
+	Symbol   string              `json:"symbol"`
+	Type     string              `json:"type"`
+}
+
+// MarginBalanceResp :
+type MarginBalanceResp struct {
+	Balances []MarginBalance `json:"data"`
+	Status   string          `json:"status"`
+}
+
 // TickData :
 type TickData struct {
 	Amount    float64 `json:"amount"`
@@ -110,31 +174,51 @@ func (h *Huobi) GetKLines(symbol, period string, size int) (kl RespGetKLines, er
 	param["symbol"] = symbol
 	param["period"] = period
 	param["size"] = strconv.Itoa(size)
-	jsonReturn := apiKeyGet(param, strRequest, h.accessKey, h.secretKey)
+	jsonReturn, err := apiKeyGet(param, strRequest, h.accessKey, h.secretKey)
+	if nil != err {
+		log.Printf("Huobi.GetKLines - apiKeyGet failed : %v, content : %s", err, jsonReturn)
+		return kl, err
+	}
 	err = json.Unmarshal([]byte(jsonReturn), &kl)
+	if nil != err {
+		log.Printf("Huobi.GetKLines - failed : %v, content : %s", err, jsonReturn)
+	}
 	return kl, err
 }
 
-// 查询当前用户的所有账户, 根据包含的私钥查询
+// GetAccounts : 查询当前用户的所有账户, 根据包含的私钥查询
 // return: AccountsReturn对象
-func (h *Huobi) GetAccounts() AccountsReturn {
+func (h *Huobi) GetAccounts() (AccountsReturn, error) {
 	accountsReturn := AccountsReturn{}
 
 	strRequest := "/v1/account/accounts"
-	jsonAccountsReturn := apiKeyGet(make(map[string]string), strRequest, h.accessKey, h.secretKey)
-	json.Unmarshal([]byte(jsonAccountsReturn), &accountsReturn)
-	return accountsReturn
+	buf, err := apiKeyGet(make(map[string]string), strRequest, h.accessKey, h.secretKey)
+	if nil != err {
+		log.Printf("Huobi.GetAccounts - apiKeyGet failed : %v, content : %s", err, buf)
+		return accountsReturn, err
+	}
+	json.Unmarshal([]byte(buf), &accountsReturn)
+	return accountsReturn, nil
 }
 
-// 根据账户ID查询账户余额
+// GetAccountBalance : 根据账户ID查询账户余额
 // return: BalanceReturn对象
 func (h *Huobi) GetAccountBalance() ([]proto.AccountBalance, error) {
 	balanceReturn := BalanceReturn{}
 	strRequest := fmt.Sprintf("/v1/account/accounts/%d/balance", h.tradeAccount.ID)
-	jsonBanlanceReturn := apiKeyGet(make(map[string]string), strRequest, h.accessKey, h.secretKey)
-	json.Unmarshal([]byte(jsonBanlanceReturn), &balanceReturn)
+	jsonBanlanceReturn, err := apiKeyGet(make(map[string]string), strRequest, h.accessKey, h.secretKey)
+	if nil != err {
+		log.Printf("Huobi.GetAccountBalance - apiKeyGet failed : %v", err)
+		return nil, err
+	}
+	err = json.Unmarshal([]byte(jsonBanlanceReturn), &balanceReturn)
+	if err != nil {
+		log.Printf("Huobi.GetAccountBalance - json.Unmarshal failed : %v", err)
+		return nil, err
+	}
 	if balanceReturn.Status != "ok" {
-		return nil, errors.New(balanceReturn.ErrMsg)
+		log.Printf("Huobi.GetAccountBalance - json.Unmarshal errmsg : %s", balanceReturn.ErrMsg)
+		return nil, fmt.Errorf(balanceReturn.ErrMsg)
 	}
 
 	var res []proto.AccountBalance
@@ -150,7 +234,34 @@ func (h *Huobi) GetAccountBalance() ([]proto.AccountBalance, error) {
 	return res, nil
 }
 
-// 下单
+// GetMarginBalances : 根据账户ID查询账户余额
+func (h *Huobi) GetMarginBalances(baseSym string) ([]MarginBalance, error) {
+	//balanceReturn := BalanceReturn{}
+	strRequest := fmt.Sprintf("/v1/margin/accounts/balance")
+	args := make(map[string]string)
+	if baseSym != "" {
+		args["symbol"] = baseSym
+	}
+	buf, err := apiKeyGet(args, strRequest, h.accessKey, h.secretKey)
+	if nil != err {
+		log.Printf("Huobi.GetMarginBalances - apiKeyGet failed : %v", err)
+		return nil, err
+	}
+	log.Printf("Huobi.GetMarginBalances : %s", string(buf))
+	var mbr MarginBalanceResp
+	if err = json.Unmarshal([]byte(buf), &mbr); nil != err {
+		log.Printf("Huobi.GetMarginBalances - json.Unmarshal failed %v", err)
+		return nil, err
+	}
+	if mbr.Status != "ok" {
+		log.Printf("Huobi.GetMarginBalances - response status %s, invalid", mbr.Status)
+		return nil, fmt.Errorf("response status wrong : " + mbr.Status)
+	}
+
+	return mbr.Balances, nil
+}
+
+// OrderPlace :下单
 // placeRequestParams: 下单信息
 // return: OrderID
 func (h *Huobi) OrderPlace(params *proto.OrderPlaceParams) (*proto.OrderPlaceReturn, error) {
@@ -176,8 +287,12 @@ func (h *Huobi) OrderPlace(params *proto.OrderPlaceParams) (*proto.OrderPlaceRet
 	mapParams["type"] = placeRequestParams.Type
 
 	strRequest := "/v1/order/orders/place"
-	jsonPlaceReturn := apiKeyPost(mapParams, strRequest, h.accessKey, h.secretKey)
-	json.Unmarshal([]byte(jsonPlaceReturn), &placeReturn)
+	buf, err := apiKeyPost(mapParams, strRequest, h.accessKey, h.secretKey)
+	if nil != err {
+		log.Printf("Huobi.OrderPlace - apiKeyPost failed : %v", err)
+		return nil, err
+	}
+	json.Unmarshal([]byte(buf), &placeReturn)
 
 	if placeReturn.Status != "ok" {
 		return nil, errors.New(placeReturn.ErrMsg)
@@ -190,15 +305,19 @@ func (h *Huobi) OrderPlace(params *proto.OrderPlaceParams) (*proto.OrderPlaceRet
 
 }
 
-// 申请撤销一个订单请求
+// OrderCancel : 申请撤销一个订单请求
 // strOrderID: 订单ID
 // return: PlaceReturn对象
 func (h *Huobi) OrderCancel(params *proto.OrderCancelParams) error {
 	placeReturn := PlaceReturn{}
 
 	strRequest := fmt.Sprintf("/v1/order/orders/%s/submitcancel", params.OrderID)
-	jsonPlaceReturn := apiKeyPost(make(map[string]string), strRequest, h.accessKey, h.secretKey)
-	json.Unmarshal([]byte(jsonPlaceReturn), &placeReturn)
+	buf, err := apiKeyPost(make(map[string]string), strRequest, h.accessKey, h.secretKey)
+	if nil != err {
+		log.Printf("Huobi.OrderCancel - apiKeyPost failed : %v", err)
+		return err
+	}
+	json.Unmarshal([]byte(buf), &placeReturn)
 
 	if placeReturn.Status != "ok" {
 		return errors.New(placeReturn.ErrMsg)
@@ -214,7 +333,11 @@ func (h *Huobi) GetOrderInfo(params *proto.OrderInfoParams) (*proto.Order, error
 	orderReturn := OrderReturn{}
 
 	strRequest := fmt.Sprintf("/v1/order/orders/%s", params.OrderID)
-	jsonPlaceReturn := apiKeyGet(make(map[string]string), strRequest, h.accessKey, h.secretKey)
+	jsonPlaceReturn, err := apiKeyGet(make(map[string]string), strRequest, h.accessKey, h.secretKey)
+	if nil != err {
+		log.Printf("Huobi.GetOrderInfo - apiKeyGet failed : %v", err)
+		return nil, err
+	}
 	json.Unmarshal([]byte(jsonPlaceReturn), &orderReturn)
 
 	if orderReturn.Status != "ok" {
@@ -234,6 +357,7 @@ func (h *Huobi) GetOrderInfo(params *proto.OrderInfoParams) (*proto.Order, error
 
 }
 
+// GetOrders :
 func (h *Huobi) GetOrders(params *proto.OrdersParams) ([]proto.Order, error) {
 	ordersReturn := OrdersReturn{}
 
@@ -243,7 +367,11 @@ func (h *Huobi) GetOrders(params *proto.OrdersParams) ([]proto.Order, error) {
 	json.Unmarshal(jsonP, &paramMap)
 
 	strRequest := "/v1/order/orders"
-	jsonRet := apiKeyGet(paramMap, strRequest, h.accessKey, h.secretKey)
+	jsonRet, err := apiKeyGet(paramMap, strRequest, h.accessKey, h.secretKey)
+	if nil != err {
+		log.Printf("Huobi.GetOrders - apiKeyGet failed : %v", err)
+		return nil, err
+	}
 	json.Unmarshal([]byte(jsonRet), &ordersReturn)
 	if ordersReturn.Status != "ok" {
 		return nil, errors.New(ordersReturn.ErrMsg)
@@ -274,12 +402,16 @@ func (h *Huobi) GetPointOrders() (*proto.Order, error) {
 	//orderReturn := OrderReturn{}
 
 	strRequest := fmt.Sprintf("/v1/points/orders")
-	jsonPlaceReturn := apiKeyGet(make(map[string]string), strRequest, h.accessKey, h.secretKey)
+	jsonPlaceReturn, err := apiKeyGet(make(map[string]string), strRequest, h.accessKey, h.secretKey)
+	if nil != err {
+		log.Printf("Huobi.GetPointOrders - apiKeyGet failed : %v", err)
+		return nil, err
+	}
 	log.Println(jsonPlaceReturn)
 	//json.Unmarshal([]byte(jsonPlaceReturn), &orderReturn)
 	//
 	//if orderReturn.Status != "ok" {
-	//	return nil, errors.New(orderReturn.ErrMsg)
+	//  return nil, errors.New(orderReturn.ErrMsg)
 	//}
 	//
 	//var ret proto.Order
@@ -376,6 +508,92 @@ func (h *Huobi) SubscribeKLine(period string, symbols ...string) {
 	return
 }
 
+// GetMarginLoanOrders :
+// 参数名称 是否必须    类型    描述    默认值  取值范围
+// symbol   true        string  交易对
+// start-date false     string  查询开始日期, 日期格式yyyy-mm-dd
+// end-date false       string  查询结束日期, 日期格式yyyy-mm-dd
+// states   false       string  状态
+// from     false       string  查询起始 ID
+// direct   false       string  查询方向        prev 向前，next 向后
+// size     false       string  查询记录大小
+// 只需要"symbol":"xxxxxx"和 "states":"accrual"， 其他应该都不需要
+func (h *Huobi) GetMarginLoanOrders(params map[string]string) ([]LoanOrder, error) {
+	strReqURL := "/v1/margin/loan-orders"
+	buf, err := apiKeyGet(params, strReqURL, h.accessKey, h.secretKey)
+	if nil != err {
+		log.Printf("Huobi.GetMarginLoanOrders - apiKeyGet failed : %v", err)
+		return nil, err
+	}
+	var resp LoanOrderResp
+	err = json.Unmarshal([]byte(buf), &resp)
+	if nil != err {
+		log.Printf("Huobi.GetMarginLoanOrders - json.Unmarshal '%s' failed : %v", buf, err)
+		return nil, err
+	}
+
+	if resp.Status != "ok" {
+		log.Printf("Huobi.GetMarginLoanOrders - resp.Status %s, invalid", resp.Status)
+		return nil, err
+	}
+
+	return resp.Orders, nil
+}
+
+// MarginIO :
+func (h *Huobi) MarginIO(symbol, currency string, dirIn bool, amount float64) error {
+	strReqURL := ""
+	if dirIn {
+		strReqURL = "/v1/dw/transfer-in/margin"
+	} else {
+		strReqURL = "/v1/dw/transfer-out/margin"
+	}
+
+	params := map[string]string{"symbol": symbol,
+		"currency": currency,
+		"amount":   fmt.Sprintf("%.8f", amount),
+	}
+
+	buf, err := apiKeyPost(params, strReqURL, h.accessKey, h.secretKey)
+	if nil != err {
+		log.Printf("Huobi.MarginIO - apiKeyPost failed : %v", err)
+		return err
+	}
+	resMap := make(map[string]interface{})
+	err = json.Unmarshal([]byte(buf), &resMap)
+	if nil != err {
+		log.Printf("Huobi.MarginIO - json.Unmarshal '%s' failed : %v", buf, err)
+		return err
+	}
+	if resMap["status"] != "ok" {
+		log.Printf("Huobi.MarginIO - status invalid, response : %s", buf)
+		return err
+	}
+	return nil
+}
+
+// RepayLoan :
+func (h *Huobi) RepayLoan(loanID int, amount string /*not float*/) (err error) {
+	strReqURL := fmt.Sprintf("/v1/margin/orders/%d/repay", loanID)
+	buf, err := apiKeyPost(map[string]string{"amount": amount}, strReqURL, h.accessKey, h.secretKey)
+	if nil != err {
+		log.Printf("Huobi.RepayLoan - apiKeyPost failed : %v", err)
+		return err
+	}
+	resMap := make(map[string]interface{})
+	err = json.Unmarshal([]byte(buf), &resMap)
+	if nil != err {
+		log.Printf("Huobi.RepayLoan - json.Unmarshal '%s' failed : %v", buf, err)
+		return err
+	}
+	if resMap["status"] != "ok" {
+		log.Printf("Huobi.RepayLoan - status invalid, response : %s", buf)
+		return err
+	}
+	return nil
+}
+
+// NewHuobi :
 func NewHuobi(accesskey, secretkey string) (*Huobi, error) {
 	h := &Huobi{
 		accessKey: accesskey,
@@ -384,7 +602,10 @@ func NewHuobi(accesskey, secretkey string) (*Huobi, error) {
 
 	if accesskey != "" {
 		log.Println("init huobi.")
-		ret := h.GetAccounts()
+		ret, err := h.GetAccounts()
+		if nil != err {
+			return nil, err
+		}
 		if ret.Status != "ok" {
 			return nil, errors.New(ret.ErrMsg)
 		}

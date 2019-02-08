@@ -88,7 +88,7 @@ func ComputeHmacMd5(strMessage, strSecret string) string {
 // strUrl: 请求的URL
 // strParams: string类型的请求参数, user=lxz&pwd=lxz
 // return: 请求结果
-func HttpGetRequest(strUrl string, mapParams map[string]string) string {
+func HttpGetRequest(strUrl string, mapParams map[string]string) (string, error) {
 	httpClient := &http.Client{}
 
 	var strRequestUrl string
@@ -102,30 +102,30 @@ func HttpGetRequest(strUrl string, mapParams map[string]string) string {
 	// 构建Request, 并且按官方要求添加Http Header
 	request, err := http.NewRequest("GET", strRequestUrl, nil)
 	if nil != err {
-		return err.Error()
+		return "", err
 	}
 	request.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36")
 
 	// 发出请求
 	response, err := httpClient.Do(request)
 	if nil != err {
-		return err.Error()
+		return "", err
 	}
 	defer response.Body.Close()
 	// 解析响应内容
 	body, err := ioutil.ReadAll(response.Body)
 	if nil != err {
-		return err.Error()
+		return "", err
 	}
 
-	return string(body)
+	return string(body), nil
 }
 
 // Http POST请求基础函数, 通过封装Go语言Http请求, 支持火币网REST API的HTTP POST请求
 // strUrl: 请求的URL
 // mapParams: map类型的请求参数
 // return: 请求结果
-func HttpPostRequest(strUrl string, mapParams, headerParams map[string]string) string {
+func HttpPostRequest(strUrl string, mapParams, headerParams map[string]string) (string, error) {
 	httpClient := &http.Client{}
 
 	jsonParams := ""
@@ -136,7 +136,7 @@ func HttpPostRequest(strUrl string, mapParams, headerParams map[string]string) s
 
 	request, err := http.NewRequest("POST", strUrl, strings.NewReader(jsonParams))
 	if nil != err {
-		return err.Error()
+		return "", err
 	}
 
 	request.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36")
@@ -148,16 +148,16 @@ func HttpPostRequest(strUrl string, mapParams, headerParams map[string]string) s
 
 	response, err := httpClient.Do(request)
 	if nil != err {
-		return err.Error()
+		return "", err
 	}
 	defer response.Body.Close()
 
 	body, err := ioutil.ReadAll(response.Body)
 	if nil != err {
-		return err.Error()
+		return "", err
 	}
 
-	return string(body)
+	return string(body), nil
 }
 
 // 对Map的值进行URI编码

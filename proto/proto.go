@@ -6,9 +6,9 @@ const (
 )
 
 type AccountBalance struct {
-	Currency string `json:"currency"` // 币种 btc eth etc
-	Balance  string `json:"balance"`  // 结余
-	Type     string `json:"type"`     // 类型, trade: 交易余额, frozen: 冻结余额
+	Currency string  `json:"currency"`       // 币种 btc eth etc
+	Balance  float64 `json:"balance,string"` // 结余
+	Type     string  `json:"type"`           // 类型, trade: 交易余额, frozen: 冻结余额
 }
 
 const (
@@ -69,6 +69,7 @@ type OrdersParams struct {
 	PageLength      string `json:"page_length"`       //OKEX 每页数据条数，最多不超过200
 }
 
+// MarketDepthParams :
 type MarketDepthParams struct {
 	Symbol string `json:"symbol"`
 	Level  string `json:"level"`

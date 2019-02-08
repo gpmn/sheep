@@ -16,9 +16,9 @@ type AccountsReturn struct {
 
 // 子账户结构
 type SubAccount struct {
-	Currency string `json:"currency"` // 币种
-	Balance  string `json:"balance"`  // 结余
-	Type     string `json:"type"`     // 类型, trade: 交易余额, frozen: 冻结余额
+	Currency string  `json:"currency"`       // 币种
+	Balance  float64 `json:"balance,string"` // 结余
+	Type     string  `json:"type"`           // 类型, trade: 交易余额, frozen: 冻结余额
 }
 
 type Balance struct {
