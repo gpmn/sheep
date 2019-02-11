@@ -22,10 +22,10 @@ type LoanOrder struct {
 	Currency        string  `json:"currency"`
 	ID              int     `json:"id"`
 	InterestAmount  string  `json:"interest-amount"`
-	InterestBalance float64 `json:"interest-balance, string"`
+	InterestBalance float64 `json:"interest-balance,string"`
 	InterestRate    string  `json:"interest-rate"`
 	LoanAmount      string  `json:"loan-amount"`
-	LoanBalance     float64 `json:"loan-balance, string"`
+	LoanBalance     float64 `json:"loan-balance,string"`
 	State           string  `json:"state"`
 	Symbol          string  `json:"symbol"`
 	UserID          int     `json:"user-id"`
@@ -39,7 +39,7 @@ type LoanOrderResp struct {
 
 // MarginBalanceItem :
 type MarginBalanceItem struct {
-	Balance  float64 `json:"balance, string"`
+	Balance  float64 `json:"balance,string"`
 	Currency string  `json:"currency"`
 	Type     string  `json:"type"`
 }
