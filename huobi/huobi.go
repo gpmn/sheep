@@ -9,7 +9,7 @@ import (
 
 	"fmt"
 
-	"github.com/bitly/go-simplejson"
+	simplejson "github.com/bitly/go-simplejson"
 	"github.com/gpmn/sheep/consts"
 	"github.com/gpmn/sheep/proto"
 )
@@ -211,8 +211,7 @@ func (h *Huobi) GetAccountBalance() ([]proto.AccountBalance, error) {
 		log.Printf("Huobi.GetAccountBalance - apiKeyGet failed : %v", err)
 		return nil, err
 	}
-	err = json.Unmarshal([]byte(jsonBanlanceReturn), &balanceReturn)
-	if err != nil {
+	if err = json.Unmarshal([]byte(jsonBanlanceReturn), &balanceReturn); err != nil {
 		log.Printf("Huobi.GetAccountBalance - json.Unmarshal failed : %v", err)
 		return nil, err
 	}
@@ -588,6 +587,32 @@ func (h *Huobi) RepayLoan(loanID int, amount string /*not float*/) (err error) {
 	}
 	if resMap["status"] != "ok" {
 		log.Printf("Huobi.RepayLoan - status invalid, response : %s", buf)
+		return err
+	}
+	return nil
+}
+
+// ApplyLoan :
+func (h *Huobi) ApplyLoan(symbol, currency string, amount float64) (err error) {
+	strReqURL := "/v1/margin/orders"
+	buf, err := apiKeyPost(map[string]string{
+		"symbol":   symbol,
+		"currency": currency,
+		"amount":   fmt.Sprintf("%.8f", amount)},
+		strReqURL, h.accessKey, h.secretKey)
+
+	if nil != err {
+		log.Printf("Huobi.ApplyLoan - apiKeyPost failed : %v", err)
+		return err
+	}
+	resMap := make(map[string]interface{})
+	err = json.Unmarshal([]byte(buf), &resMap)
+	if nil != err {
+		log.Printf("Huobi.ApplyLoan - json.Unmarshal '%s' failed : %v", buf, err)
+		return err
+	}
+	if resMap["status"] != "ok" {
+		log.Printf("Huobi.ApplyLoan - status invalid, response : %s", buf)
 		return err
 	}
 	return nil
