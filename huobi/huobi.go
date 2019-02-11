@@ -246,7 +246,6 @@ func (h *Huobi) GetMarginBalances(baseSym string) ([]MarginBalance, error) {
 		log.Printf("Huobi.GetMarginBalances - apiKeyGet failed : %v", err)
 		return nil, err
 	}
-	log.Printf("Huobi.GetMarginBalances : %s", string(buf))
 	var mbr MarginBalanceResp
 	if err = json.Unmarshal([]byte(buf), &mbr); nil != err {
 		log.Printf("Huobi.GetMarginBalances - json.Unmarshal failed %v", err)
@@ -357,7 +356,7 @@ func (h *Huobi) GetOrderInfo(params *proto.OrderInfoParams) (*proto.Order, error
 }
 
 // GetOrders :
-func (h *Huobi) GetOrders(params *proto.OrdersParams) ([]proto.Order, error) {
+func (h *Huobi) getOrdersInternal(params *proto.OrdersParams, onlyOpen bool) ([]proto.Order, error) {
 	ordersReturn := OrdersReturn{}
 
 	jsonP, _ := json.Marshal(params)
@@ -366,12 +365,15 @@ func (h *Huobi) GetOrders(params *proto.OrdersParams) ([]proto.Order, error) {
 	json.Unmarshal(jsonP, &paramMap)
 
 	strRequest := "/v1/order/orders"
+	if onlyOpen {
+		strRequest = "/v1/order/openOrders"
+	}
 	jsonRet, err := apiKeyGet(paramMap, strRequest, h.accessKey, h.secretKey)
 	if nil != err {
 		log.Printf("Huobi.GetOrders - apiKeyGet failed : %v", err)
 		return nil, err
 	}
-	log.Printf("Huobi.GetOrders - %s", jsonRet)
+
 	json.Unmarshal([]byte(jsonRet), &ordersReturn)
 	if ordersReturn.Status != "ok" {
 		return nil, errors.New(ordersReturn.ErrMsg)
@@ -393,7 +395,16 @@ func (h *Huobi) GetOrders(params *proto.OrdersParams) ([]proto.Order, error) {
 	}
 
 	return ret, nil
+}
 
+// GetOrders :
+func (h *Huobi) GetOrders(params *proto.OrdersParams) ([]proto.Order, error) {
+	return h.getOrdersInternal(params, false)
+}
+
+// GetOpenOrders :
+func (h *Huobi) GetOpenOrders(params *proto.OrdersParams) ([]proto.Order, error) {
+	return h.getOrdersInternal(params, true)
 }
 
 // 查询订单详情
@@ -535,7 +546,7 @@ func (h *Huobi) GetMarginLoanOrders(params map[string]string) ([]LoanOrder, erro
 
 	if resp.Status != "ok" {
 		log.Printf("Huobi.GetMarginLoanOrders - resp.Status %s, invalid", resp.Status)
-		return nil, err
+		return nil, fmt.Errorf("status %s invalid", resp.Status)
 	}
 
 	return resp.Orders, nil
@@ -568,7 +579,7 @@ func (h *Huobi) MarginIO(symbol, currency string, dirIn bool, amount float64) er
 	}
 	if resMap["status"] != "ok" {
 		log.Printf("Huobi.MarginIO - status invalid, response : %s", buf)
-		return err
+		return fmt.Errorf("status %s invalid", resMap["status"])
 	}
 	return nil
 }
@@ -589,7 +600,7 @@ func (h *Huobi) RepayLoan(loanID int, amount string /*not float*/) (err error) {
 	}
 	if resMap["status"] != "ok" {
 		log.Printf("Huobi.RepayLoan - status invalid, response : %s", buf)
-		return err
+		return fmt.Errorf("status %s invalid", resMap["status"])
 	}
 	return nil
 }
@@ -615,9 +626,44 @@ func (h *Huobi) ApplyLoan(symbol, currency string, amount float64) (err error) {
 	}
 	if resMap["status"] != "ok" {
 		log.Printf("Huobi.ApplyLoan - status invalid, response : %s", buf)
-		return err
+		return fmt.Errorf("status %s invalid", resMap["status"])
 	}
 	return nil
+}
+
+// SymbolDesc :
+type SymbolDesc struct {
+	BaseCurrency    string `json:"base-currency"`
+	QuoteCurrency   string `json:"quote-currency"`
+	PricePrecision  int    `json:"price-precision"`
+	AmountPrecision int    `json:"amount-precision"`
+	SymbolPartition string `json:"symbol-partition"`
+	Symbol          string `json:"symbol"`
+}
+
+type getSymbolResp struct {
+	Status string       `json:"status"`
+	Data   []SymbolDesc `json:"data"`
+}
+
+// GetSymbols :
+func (h *Huobi) GetSymbols() (descs []SymbolDesc, err error) {
+	buf, err := apiKeyGet(map[string]string{}, "/v1/common/symbols", h.accessKey, h.secretKey)
+	if nil != err {
+		log.Printf("Huobi.GetSymbols - apiKeyGet failed : %v", err)
+		return nil, err
+	}
+
+	var resp getSymbolResp
+	if err = json.Unmarshal([]byte(buf), &resp); nil != err {
+		log.Printf("Huobi.GetSymbols - json.Unmarshal '%s' failed : %v", buf, err)
+		return nil, err
+	}
+	if resp.Status != "ok" {
+		log.Printf("Huobi.GetSymbols - status invalid, response : %s", buf)
+		return nil, fmt.Errorf("status %s invalid", resp.Status)
+	}
+	return resp.Data, nil
 }
 
 // NewHuobi :
