@@ -371,6 +371,7 @@ func (h *Huobi) GetOrders(params *proto.OrdersParams) ([]proto.Order, error) {
 		log.Printf("Huobi.GetOrders - apiKeyGet failed : %v", err)
 		return nil, err
 	}
+	log.Printf("Huobi.GetOrders - %s", jsonRet)
 	json.Unmarshal([]byte(jsonRet), &ordersReturn)
 	if ordersReturn.Status != "ok" {
 		return nil, errors.New(ordersReturn.ErrMsg)
@@ -386,6 +387,7 @@ func (h *Huobi) GetOrders(params *proto.OrdersParams) ([]proto.Order, error) {
 		item.FieldAmount, _ = strconv.ParseFloat(cell.FieldAmount, 64)
 		item.Type = cell.Type
 		item.Amount, _ = strconv.ParseFloat(cell.Amount, 64)
+		item.CreatedSec = cell.CreatedSec
 
 		ret = append(ret, item)
 	}

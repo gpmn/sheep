@@ -60,6 +60,7 @@ type Order struct {
 	FieldAmount string `json:"field-amount"`
 	Price       string `json:"price"`
 	Type        string `json:"type"`
+	CreatedSec  int64  `json:"created-at"`
 }
 type OrderReturn struct {
 	Status  string `json:"status"`
