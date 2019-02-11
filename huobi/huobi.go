@@ -266,8 +266,10 @@ func (h *Huobi) OrderPlace(params *proto.OrderPlaceParams) (*proto.OrderPlaceRet
 	placeReturn := PlaceReturn{}
 	var placeRequestParams PlaceRequestParams
 	placeRequestParams.AccountID = strconv.FormatInt(h.tradeAccount.ID, 10)
-	placeRequestParams.Amount = strconv.FormatFloat(params.Amount, 'f', -1, 64)
-	placeRequestParams.Price = strconv.FormatFloat(params.Price, 'f', -1, 64)
+	fmtStr := fmt.Sprintf("%%.%df", params.AmountPrecision)
+	placeRequestParams.Amount = fmt.Sprintf(fmtStr, params.Amount) //strconv.FormatFloat(params.Amount, 'f', -1, 64)
+	fmtStr = fmt.Sprintf("%%.%df", params.PricePrecision)
+	placeRequestParams.Price = fmt.Sprintf(fmtStr, params.Price)
 	placeRequestParams.Source = "api"
 	placeRequestParams.Symbol = strings.ToLower(params.BaseCurrencyID) + strings.ToLower(params.QuoteCurrencyID)
 	placeRequestParams.Type = params.Type

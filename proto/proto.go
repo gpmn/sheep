@@ -24,6 +24,8 @@ type OrderPlaceParams struct {
 	BaseCurrencyID  string  `json:"base_currency_id"`
 	QuoteCurrencyID string  `json:"quote_currency_id"`
 	Type            string  `json:"type"`
+	PricePrecision  int     `json:"-"`
+	AmountPrecision int     `json:"-"`
 }
 
 type OrderPlaceReturn struct {
