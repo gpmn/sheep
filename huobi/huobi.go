@@ -668,6 +668,50 @@ func (h *Huobi) GetSymbols() (descs []SymbolDesc, err error) {
 	return resp.Data, nil
 }
 
+type getTickersResp struct {
+	Status string `json:"status"`
+	Ts     int64  `json:"ts"`
+	Data   []struct {
+		Open   float64 `json:"open"`
+		Close  float64 `json:"close"`
+		Low    float64 `json:"low"`
+		High   float64 `json:"high"`
+		Amount float64 `json:"amount"`
+		Count  int     `json:"count"`
+		Vol    float64 `json:"vol"`
+		Symbol string  `json:"symbol"`
+	} `json:"data"`
+}
+
+// GetTickers :
+func (h *Huobi) GetTickers() (tickerMap map[string]*TickData, err error) {
+	buf, err := apiKeyGet(map[string]string{}, "/market/tickers", h.accessKey, h.secretKey)
+	if nil != err {
+		log.Printf("Huobi.GetTickers - apiKeyGet failed : %v", err)
+		return nil, err
+	}
+	var resp getTickersResp
+	if err = json.Unmarshal([]byte(buf), &resp); nil != err {
+		log.Printf("Huobi.GetTickers - json.Unmarshal '%s' failed : %v", buf, err)
+		return nil, err
+	}
+	if resp.Status != "ok" {
+		log.Printf("Huobi.GetTickers - status invalid, response : %s", buf)
+		return nil, fmt.Errorf("status %s invalid", resp.Status)
+	}
+	tickerMap = make(map[string]*TickData)
+	for idx := range resp.Data {
+		data := &resp.Data[idx]
+		tickerMap[data.Symbol] = &TickData{
+			Amount:    data.Amount,
+			Direction: "",
+			Price:     data.Close,
+			TS:        resp.Ts,
+		}
+	}
+	return tickerMap, nil
+}
+
 // NewHuobi :
 func NewHuobi(accesskey, secretkey string) (*Huobi, error) {
 	h := &Huobi{

@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"sort"
 	"strings"
+	"time"
 )
 
 func MD5(input []byte) []byte {
@@ -126,7 +127,7 @@ func HttpGetRequest(strUrl string, mapParams map[string]string) (string, error) 
 // mapParams: map类型的请求参数
 // return: 请求结果
 func HttpPostRequest(strUrl string, mapParams, headerParams map[string]string) (string, error) {
-	httpClient := &http.Client{}
+	httpClient := &http.Client{Timeout: 5 * time.Second}
 
 	jsonParams := ""
 	if nil != mapParams {
