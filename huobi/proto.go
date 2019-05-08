@@ -80,3 +80,23 @@ type OrdersReturn struct {
 	ErrCode string  `json:"err-code"`
 	ErrMsg  string  `json:"err-msg"`
 }
+
+type OpenOrdersReturn struct {
+	Status string      `json:"status"`
+	Data   []OpenOrder `json:"data"`
+}
+
+type OpenOrder struct {
+	ID               int     `json:"id"`
+	Symbol           string  `json:"symbol"`
+	AccountID        int     `json:"account-id"`
+	Amount           float64 `json:"amount,string"`
+	Price            float64 `json:"price,string"`
+	CreatedSec       int64   `json:"created-at"`
+	Type             string  `json:"type"`
+	FilledAmount     float64 `json:"filled-amount,string"`
+	FilledCashAmount float64 `json:"filled-cash-amount,string"`
+	FilledFees       float64 `json:"filled-fees,string"`
+	Source           string  `json:"source"`
+	State            string  `json:"state"`
+}

@@ -122,6 +122,7 @@ type Huobi struct {
 	depthListener   DepthlListener
 	detailListener  DetailListener
 	klineUpListener KLineUpListener
+	orderListener   OrderListener
 }
 
 func (h *Huobi) OpenWebsocket() error {
@@ -358,7 +359,7 @@ func (h *Huobi) GetOrderInfo(params *proto.OrderInfoParams) (*proto.Order, error
 }
 
 // GetOrders :
-func (h *Huobi) getOrdersInternal(params *proto.OrdersParams, onlyOpen bool) ([]proto.Order, error) {
+func (h *Huobi) GetOrders(params *proto.OrdersParams) ([]proto.Order, error) {
 	ordersReturn := OrdersReturn{}
 
 	jsonP, _ := json.Marshal(params)
@@ -367,9 +368,6 @@ func (h *Huobi) getOrdersInternal(params *proto.OrdersParams, onlyOpen bool) ([]
 	json.Unmarshal(jsonP, &paramMap)
 
 	strRequest := "/v1/order/orders"
-	if onlyOpen {
-		strRequest = "/v1/order/openOrders"
-	}
 	jsonRet, err := apiKeyGet(paramMap, strRequest, h.accessKey, h.secretKey)
 	if nil != err {
 		log.Printf("Huobi.GetOrders - apiKeyGet failed : %v", err)
@@ -399,14 +397,44 @@ func (h *Huobi) getOrdersInternal(params *proto.OrdersParams, onlyOpen bool) ([]
 	return ret, nil
 }
 
-// GetOrders :
-func (h *Huobi) GetOrders(params *proto.OrdersParams) ([]proto.Order, error) {
-	return h.getOrdersInternal(params, false)
-}
-
 // GetOpenOrders :
 func (h *Huobi) GetOpenOrders(params *proto.OrdersParams) ([]proto.Order, error) {
-	return h.getOrdersInternal(params, true)
+	oor := OpenOrdersReturn{}
+
+	jsonP, _ := json.Marshal(params)
+
+	var paramMap = make(map[string]string)
+	json.Unmarshal(jsonP, &paramMap)
+
+	strRequest := "/v1/order/openOrders"
+	jsonRet, err := apiKeyGet(paramMap, strRequest, h.accessKey, h.secretKey)
+	if nil != err {
+		log.Printf("Huobi.GetOrders - apiKeyGet failed : %v", err)
+		return nil, err
+	}
+
+	json.Unmarshal([]byte(jsonRet), &oor)
+	if oor.Status != "ok" {
+		return nil, errors.New(oor.Status)
+	}
+
+	var ret []proto.Order
+	for idx := range oor.Data {
+		cell := &oor.Data[idx]
+		var item proto.Order
+		item.Price = cell.Price
+		item.ID = fmt.Sprintf("%d", cell.ID)
+		item.Symbol = cell.Symbol
+		item.State = cell.State
+		item.FieldAmount = cell.FilledAmount
+		item.Type = cell.Type
+		item.Amount = cell.Amount
+		item.CreatedSec = cell.CreatedSec
+
+		ret = append(ret, item)
+	}
+
+	return ret, nil
 }
 
 // 查询订单详情
@@ -453,12 +481,16 @@ func (h *Huobi) SetKLineUpListener(listener KLineUpListener) {
 	h.klineUpListener = listener
 }
 
+func (h *Huobi) SetOrderListener(listener OrderListener) {
+	h.orderListener = listener
+}
+
 // Listener 订阅事件监听器
 type DetailListener func(symbol string, detail *MarketTradeDetail)
 
-func (h *Huobi) SubscribeDetail(symbols ...string) {
+func (h *Huobi) SubscribeDetail(symbols ...string) (err error) {
 	for _, symbol := range symbols {
-		h.market.Subscribe("market."+symbol+".trade.detail", func(topic string, j *simplejson.Json) {
+		err = h.market.Subscribe("market."+symbol+".trade.detail", func(topic string, j *simplejson.Json) {
 			js, _ := j.MarshalJSON()
 			var mtd MarketTradeDetail
 			err := json.Unmarshal(js, &mtd)
@@ -471,9 +503,13 @@ func (h *Huobi) SubscribeDetail(symbols ...string) {
 			if h.detailListener != nil {
 				h.detailListener(ts[1], &mtd)
 			}
-
 		})
+		if nil != err {
+			log.Printf("Huobi.SubscribeDetail - Subscribe failed : %s", err.Error())
+			return err
+		}
 	}
+	return nil
 }
 
 // Listener 订阅事件监听器
@@ -520,6 +556,65 @@ func (h *Huobi) SubscribeKLine(period string, symbols ...string) {
 		})
 	}
 	return
+}
+
+// OrderUpdateData :
+type OrderUpdateData struct {
+	AccountID        int    `json:"account-id"`
+	CreatedAt        int    `json:"created-at"`
+	FilledAmount     string `json:"filled-amount"`
+	FilledCashAmount string `json:"filled-cash-amount"`
+	FilledFees       string `json:"filled-fees"`
+	OrderAmount      string `json:"order-amount"`
+	OrderID          int    `json:"order-id"`
+	OrderPrice       string `json:"order-price"`
+	OrderSource      string `json:"order-source"`
+	OrderState       string `json:"order-state"`
+	OrderType        string `json:"order-type"`
+	Price            string `json:"price"`
+	Role             string `json:"role"`
+	SeqID            int    `json:"seq-id"`
+	Symbol           string `json:"symbol"`
+	UnfilledAmount   string `json:"unfilled-amount"`
+}
+
+// OrderUpdate :
+type OrderUpdate struct {
+	OP    string          `json:"op"`
+	Topic string          `json:"topic"`
+	ts    int64           `json:"ts"`
+	Order OrderUpdateData `json:"data"`
+}
+
+// OrderListener : 订阅事件监听器
+type OrderListener func(symbol string, od *OrderUpdate)
+
+// SubscribeOrder :
+func (h *Huobi) SubscribeOrder(symbols ...string) (err error) {
+	for _, symbol := range symbols {
+		tp := "order." + symbol
+		err = h.market.SubscribeEx(tp,
+			map[string]string{"op": "sub", "cid": tp, "topic": tp},
+			func(topic string, j *simplejson.Json) {
+				js, _ := j.MarshalJSON()
+				var order OrderUpdate
+				err := json.Unmarshal(js, &order)
+				if err != nil {
+					log.Printf("Huobi.SubscribeDetail - callback failed : %s", err.Error())
+					return
+				}
+
+				ts := strings.Split(topic, ".")
+				if h.detailListener != nil {
+					h.orderListener(ts[1], &order)
+				}
+			})
+		if nil != err {
+			log.Printf("Huobi.SubscribeOrder - Subscribe failed : %s", err.Error())
+			return err
+		}
+	}
+	return nil
 }
 
 // GetMarginLoanOrders :

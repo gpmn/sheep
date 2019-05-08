@@ -219,6 +219,26 @@ func (m *Market) handleMessageLoop() {
 			return
 		}
 
+		// 处理订阅成功通知
+		if op := json.Get("op").MustString(); op != "" {
+			if op == "notify" {
+				topic := json.Get("topic").MustString()
+				c, ok := m.subscribeResultCb[topic]
+				if ok {
+					c <- json
+				}
+			} else if op == "sub" {
+				errcode := json.Get("err-code").MustInt64()
+				if errcode != 0 {
+					topic := json.Get("topic").MustString()
+					log.Printf("WARNING :: subscribe %s failed", topic)
+				}
+			} else {
+				log.Printf("WARNING :: unknown op '%s' : %+v", op, msg)
+			}
+			return
+		}
+
 		// 请求行情结果
 		if rep, id := json.Get("rep").MustString(), json.Get("id").MustString(); rep != "" && id != "" {
 			c, ok := m.requestResultCb[id]
@@ -275,12 +295,17 @@ func (m *Market) handlePing(ping pingData) (err error) {
 
 // Subscribe 订阅
 func (m *Market) Subscribe(topic string, listener Listener) error {
+	return m.SubscribeEx(topic, subData{ID: topic, Sub: topic}, listener)
+}
+
+// SubscribeEx : 订阅
+func (m *Market) SubscribeEx(topic string, data interface{}, listener Listener) error {
 	var isNew = false
 
 	// 如果未曾发送过订阅指令，则发送，并等待订阅操作结果，否则直接返回
 	if _, ok := m.subscribedTopic[topic]; !ok {
 		m.subscribeResultCb[topic] = make(jsonChan)
-		m.sendMessage(subData{ID: topic, Sub: topic})
+		m.sendMessage(data)
 		isNew = true
 	} else {
 		log.Println("send subscribe before, reset listener only")
