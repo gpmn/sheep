@@ -296,6 +296,7 @@ func (h *Huobi) OrderPlace(params *proto.OrderPlaceParams) (*proto.OrderPlaceRet
 	json.Unmarshal([]byte(buf), &placeReturn)
 
 	if placeReturn.Status != "ok" {
+		log.Printf("Huobi.OrderPlace - status wrong : %v", placeReturn)
 		return nil, errors.New(placeReturn.ErrMsg)
 	}
 
