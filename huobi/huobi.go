@@ -506,7 +506,7 @@ func (h *Huobi) SubscribeDetail(symbols ...string) (err error) {
 			}
 		})
 		if nil != err {
-			log.Printf("Huobi.SubscribeDetail - Subscribe failed : %s", err.Error())
+			log.Printf("Huobi.SubscribeDetail - Subscribe failed : %v", err)
 			return err
 		}
 	}
@@ -539,9 +539,9 @@ func (h *Huobi) SubscribeDepth(symbols ...string) {
 type KLineUpListener func(symbol string, kline *KLineUpdate)
 
 // SubscribeKLine :
-func (h *Huobi) SubscribeKLine(period string, symbols ...string) {
+func (h *Huobi) SubscribeKLine(period string, symbols ...string) error {
 	for _, symbol := range symbols {
-		h.market.Subscribe("market."+symbol+".kline."+period, func(topic string, j *simplejson.Json) {
+		e := h.market.Subscribe("market."+symbol+".kline."+period, func(topic string, j *simplejson.Json) {
 			js, _ := j.MarshalJSON()
 			var mku KLineUpdate
 			err := json.Unmarshal(js, &mku)
@@ -555,8 +555,12 @@ func (h *Huobi) SubscribeKLine(period string, symbols ...string) {
 				h.klineUpListener(ts[1], &mku)
 			}
 		})
+		if e != nil {
+			log.Printf("Huobi.SubscribeKLine - h.market.Subscribe failed : %v", e)
+			return e
+		}
 	}
-	return
+	return nil
 }
 
 // OrderUpdateData :

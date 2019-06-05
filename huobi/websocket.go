@@ -155,7 +155,13 @@ func (m *Market) reconnect() error {
 	}
 	for topic, listener := range listeners {
 		delete(m.subscribedTopic, topic)
-		m.Subscribe(topic, listener)
+		err := m.Subscribe(topic, listener)
+		if nil != err {
+			log.Printf("Market.reconnect - m.Subscribe for %s failed : %v",
+				topic, err)
+			m.ws.Destroy()
+			return err
+		}
 	}
 	return nil
 }
