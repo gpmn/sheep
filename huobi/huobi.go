@@ -217,7 +217,7 @@ func (h *Huobi) GetAccountBalance() ([]proto.AccountBalance, error) {
 		return nil, err
 	}
 	if balanceReturn.Status != "ok" {
-		log.Printf("Huobi.GetAccountBalance - json.Unmarshal errmsg : %s", balanceReturn.ErrMsg)
+		log.Printf("Huobi.GetAccountBalance - status not ok, return : %+v", balanceReturn)
 		return nil, fmt.Errorf(balanceReturn.ErrMsg)
 	}
 
