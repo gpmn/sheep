@@ -144,7 +144,7 @@ func (m *Market) reconnect() error {
 	time.Sleep(time.Second)
 
 	if err := m.connect(); err != nil {
-		log.Println(err)
+		log.Println("m.reconnect - m.connect failed : %v", err)
 		return err
 	}
 
@@ -153,16 +153,18 @@ func (m *Market) reconnect() error {
 	for k, v := range m.listeners {
 		listeners[k] = v
 	}
+	log.Println("m.reconnect - begin subscribed Topic")
 	for topic, listener := range listeners {
-		delete(m.subscribedTopic, topic)
+		log.Printf("m.reconnect - subscribed Topic for %s", topic)
 		err := m.Subscribe(topic, listener)
 		if nil != err {
-			log.Printf("Market.reconnect - m.Subscribe for %s failed : %v",
+			log.Printf("m.reconnect - m.Subscribe for %s failed : %v",
 				topic, err)
 			m.ws.Destroy()
 			return err
 		}
 	}
+	log.Println("m.reconnect - subscribedTopic done")
 	return nil
 }
 
@@ -306,29 +308,33 @@ func (m *Market) Subscribe(topic string, listener Listener) error {
 
 // SubscribeEx : 订阅
 func (m *Market) SubscribeEx(topic string, data interface{}, listener Listener) error {
-	var isNew = false
+	//var isNew = false
 
 	// 如果未曾发送过订阅指令，则发送，并等待订阅操作结果，否则直接返回
 	if _, ok := m.subscribedTopic[topic]; !ok {
 		m.subscribeResultCb[topic] = make(jsonChan)
-		m.sendMessage(data)
-		isNew = true
-	} else {
-		log.Println("send subscribe before, reset listener only")
 	}
+	m.sendMessage(data)
+	//isNew = true
+	// } else {
+	// 	log.Println("send subscribe before, reset listener only")
+	// }
 
 	m.mutex.Lock()
 	m.listeners[topic] = listener
 	m.subscribedTopic[topic] = true
 	m.mutex.Unlock()
 
-	if isNew {
-		var json = <-m.subscribeResultCb[topic]
-		// 判断订阅结果，如果出错则返回出错信息
-		if msg, err := json.Get("err-msg").String(); err == nil {
-			return fmt.Errorf(msg)
-		}
+	//if isNew {
+	log.Printf("begin wait m.subscribeResultCb[%s]", topic)
+	var json = <-m.subscribeResultCb[topic]
+	log.Printf("end wait m.subscribeResultCb[%s]", topic)
+	// 判断订阅结果，如果出错则返回出错信息
+	if msg, err := json.Get("err-msg").String(); err == nil {
+		log.Printf("SubscribeEx - err-msg : %s", msg)
+		return fmt.Errorf(msg)
 	}
+	//}
 	return nil
 }
 
